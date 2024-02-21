@@ -1,0 +1,89 @@
+# ----- Setup -----
+rm(list=ls())
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(lmtest)
+
+# ----- Question 1: Make a time plot of the data -----
+sales=c(4452, 4507, 5537, 8157, 6481, 6420,
+          7208, 9509, 6755, 6483, 7129, 9072,
+          7339, 7104, 7639, 9661, 7528, 7207,
+          7538, 9573, 7522, 7211, 7729, 9542);
+sales.ts=ts(sales,frequency=4,start=c(1,1))
+plot.ts(sales.ts, main='Retail Sales for JCPenny 1996 - 2001');
+points(sales.ts)
+quarter=seq(1,24,by=1);
+trend=lm(sales~quarter);
+abline(trend$coeff,lty=2,col='red');
+# We can see that there is an increasing quarterly sales trend
+
+
+# ----- Question 2: What is the value of Beta0 from the least-square line? -----
+round(trend$coefficients,4)
+# 5903.2174 
+
+
+# ----- Question 3: What is the value of Beta1 from the least-square line? -----
+round(trend$coefficients,4)
+# 118.7526
+
+
+# ----- Question 4: What is the meaning of B0? -----
+# It is the prediction of the sales in the fourth quarter of 1995
+
+
+# ----- Question 5: Make a lagged residual plot -----
+res = round(trend$res)
+plot.ts(trend$res)
+points(res)
+dwtest(trend)
+
+# This is a funciton of finding autocorrelation, not Pearson Correlation
+my.auto<-function(x){
+  n<-length(x)
+  denom<-(x-mean(x))%*%(x-mean(x))/n
+  num<-(x[-n]-mean(x))%*%(x[-1]-mean(x))/n
+  result<-num/denom
+  return(result)
+}
+my.auto(res)
+round(my.auto(res),4)
+# the autocorrelation between residuals of lag=1 is 0.088
+
+# For the Pearson Correlation
+res_f <- res[2:24]
+res_b <- res[1:23]
+cor(res_f,res_b)
+
+
+
+# ----- Question 6: What is the estimate for B1 -----
+# Create indicator variables for quarter 1 - 3
+X1 = rep(c(1,0,0,0),6)
+X2 = rep(c(0,1,0,0),6)
+X3 = rep(c(0,0,1,0),6)
+
+trend1 = lm(sales~quarter+X1+X2+X3)
+round(trend1$coefficients,4)
+
+
+# ----- Question 7: What is the estimate for B2 -----
+round(trend1$coefficients,4)
+
+
+# ----- Question 8: What is the estimate for B3 -----
+round(trend1$coefficients,4)
+
+
+# ----- Question 9: Find the autocorrelation between successive residuals -----
+res1 = trend1$res
+plot.ts(trend1$res)
+points(res1)
+my.auto(res1)
+acf(res1,lag=1)$acf[2]
+
+# For the Pearson Correlation
+res1_f <- res1[2:24]
+res1_b <- res1[1:23]
+cor(res1_f,res1_b)
